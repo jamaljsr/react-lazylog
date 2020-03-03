@@ -27,6 +27,7 @@ import Loading from '../Loading';
 import SearchBar from '../SearchBar';
 import request from '../../request';
 import stream from '../../stream';
+import rawstream from '../../rawstream';
 import websocket from '../../websocket';
 import { searchLines } from '../../search';
 import { lazyLog, searchMatch } from './index.module.css';
@@ -46,6 +47,10 @@ export default class LazyLog extends Component {
      * String containing text to display.
      */
     text: string,
+    /**
+     * a ReadableStream object to stream logs from
+     */
+    rawStream: object,
     /**
      * Options object which will be passed through to the `fetch` request.
      * Defaults to `{ credentials: 'omit' }`.
@@ -297,10 +302,15 @@ export default class LazyLog extends Component {
     const {
       stream: isStream,
       websocket: isWebsocket,
+      rawStream,
       url,
       fetchOptions,
       websocketOptions,
     } = this.props;
+
+    if (rawStream) {
+      return rawstream(rawStream);
+    }
 
     if (isWebsocket) {
       return websocket(url, websocketOptions);
@@ -314,7 +324,7 @@ export default class LazyLog extends Component {
   }
 
   request() {
-    const { text, url } = this.props;
+    const { text, url, rawStream } = this.props;
 
     this.endRequest();
 
@@ -329,7 +339,7 @@ export default class LazyLog extends Component {
       this.handleEnd(encodedLog);
     }
 
-    if (url) {
+    if (url || rawStream) {
       this.emitter = this.initEmitter();
       this.emitter.on('update', this.handleUpdate);
       this.emitter.on('end', this.handleEnd);
